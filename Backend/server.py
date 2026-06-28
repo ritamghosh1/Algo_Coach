@@ -58,48 +58,81 @@ def get_target_rating(handle:str):
     
 # Helper Function to get the Reccomended Problems
 def get_reccomendation(weakest_tag, target_rating, solved_problems):
-    # Fetch global database
     url = "https://codeforces.com/api/problemset.problems"
     response = requests.get(url)
 
-    if response.status_code == 200:
-        data = response.json()
-        problems = data["result"]["problems"]
-        valid_problems = []
-        feature_vectors = []
-        for prob in problems:
-            name = prob["name"]
-            rating = prob.get("rating", "Unrated")
-            if name in solved_problems or rating == "Unrated":
-                continue
-            tag_match_score = 0
-            for tag in prob["tags"]:
-                if tag in weakest_tag:
-                    tag_match_score += 300
-            valid_problems.append(prob)
-            feature_vectors.append([rating, tag_match_score])
-
-        k_value = 5
-        k_value = min(len(valid_problems), k_value)
-        knn = NearestNeighbors(n_neighbors=k_value, metric="euclidean")
-        knn.fit(feature_vectors)
-
-        perfect_tag_score = len(weakest_tag)*300
-        distances, indices = knn.kneighbors([[target_rating, perfect_tag_score]])
-        reccomendation = []
-        
-        for idx in indices[0]:
-            problem = valid_problems[idx]
-            reccomendation.append({
-                "name": problem["name"],
-                "rating": problem.get("rating", "Unrated"),
-                "tags": problem["tags"],
-                "link": f"https://codeforces.com/contest/{problem['contestId']}/problem/{problem['index']}"
-            })
-        return reccomendation
-
-    else:
+    if response.status_code != 200:
         return {"error": "Failed to fetch problems"}
+
+    data = response.json()
+    problems = data["result"]["problems"]
+
+    # --- Config: tweak these to tune behavior ---
+    RATING_WEIGHT = 0.25   # rating matters, but less
+    TAG_WEIGHT    = 0.75   # tag match dominates, as intended
+    RATING_WINDOW = 300    # only consider problems within ±300 of target
+    # --------------------------------------------
+
+    valid_problems = []
+    raw_ratings = []
+    raw_tag_scores = []
+
+    for prob in problems:
+        name = prob["name"]
+        rating = prob.get("rating", "Unrated")
+
+        if name in solved_problems or rating == "Unrated":
+            continue
+
+        # Pre-filter: only keep problems within rating window
+        if abs(rating - target_rating) > RATING_WINDOW:
+            continue
+
+        # Tag score: fraction of weak tags this problem covers (always 0.0–1.0)
+        if weakest_tag:
+            tag_match = sum(1 for tag in prob["tags"] if tag in weakest_tag)
+            tag_score = tag_match / len(weakest_tag)
+        else:
+            tag_score = 0.0
+
+        valid_problems.append(prob)
+        raw_ratings.append(rating)
+        raw_tag_scores.append(tag_score)
+
+    if not valid_problems:
+        return []
+
+    # Normalize rating within the filtered window (not the full CF range)
+    # This makes the distance space consistent for every user level
+    min_r = min(raw_ratings)
+    max_r = max(raw_ratings)
+    rating_range = (max_r - min_r) if max_r != min_r else 1
+
+    feature_vectors = []
+    for r, t in zip(raw_ratings, raw_tag_scores):
+        norm_rating = ((r - min_r) / rating_range) * RATING_WEIGHT
+        norm_tags   = t * TAG_WEIGHT
+        feature_vectors.append([norm_rating, norm_tags])
+
+    norm_target_rating = ((target_rating - min_r) / rating_range) * RATING_WEIGHT
+    norm_target_tags   = 1.0 * TAG_WEIGHT 
+
+    k_value = min(len(valid_problems), 5)
+    knn = NearestNeighbors(n_neighbors=k_value, metric="euclidean")
+    knn.fit(feature_vectors)
+
+    distances, indices = knn.kneighbors([[norm_target_rating, norm_target_tags]])
+
+    recommendations = []
+    for idx in indices[0]:
+        problem = valid_problems[idx]
+        recommendations.append({
+            "name": problem["name"],
+            "rating": problem.get("rating", "Unrated"),
+            "tags": problem["tags"],
+            "link": f"https://codeforces.com/contest/{problem['contestId']}/problem/{problem['index']}"
+        })
+    return recommendations
     
 
 
