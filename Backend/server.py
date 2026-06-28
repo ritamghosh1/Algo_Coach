@@ -1,9 +1,19 @@
-from fastapi import FastAPI
+from fastapi import FastAPI # type: ignore
 import requests
 from sklearn.neighbors import NearestNeighbors
 import numpy as np
 
 app = FastAPI()
+
+# Added CORS Middleware
+from fastapi.middleware.cors import CORSMiddleware  # type: ignore
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Helper function to get the weakest tag
 def get_weakest_tag(clean_data):
