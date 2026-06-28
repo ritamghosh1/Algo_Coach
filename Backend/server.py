@@ -12,8 +12,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",                    # local dev
-        "https://algo-coach.vercel.app",            # production 
-        "https://*.vercel.app",                     # all Vercel preview deploys
+        "https://algo-coach-navy.vercel.app",            # production 
     ],
     allow_methods=["*"],
     allow_headers=["*"],
