@@ -8,7 +8,7 @@ A machine-learning-powered weakness detector and problem recommender for competi
 
 AlgoCoach analyzes your recent Codeforces submissions, identifies the algorithmic concepts you struggle with the most, and uses a K-Nearest Neighbors (KNN) algorithm to recommend the exact 5 problems you should solve next to improve.
 
-**Live Demo:** [AlgoCoach on Vercel](https://github.com/ritamghosh1/Algo_Coach)
+**Live Demo:** [AlgoCoach on Vercel](https://algo-coach-navy.vercel.app/)
 
 ## How It Works
 
