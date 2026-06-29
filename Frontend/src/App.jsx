@@ -91,49 +91,29 @@ function ProblemCard({ problem, index }) {
           e.currentTarget.style.transform = "translateX(0)";
         }}
       >
-        {/* Index */}
         <div style={{
-          minWidth: "28px",
-          height: "28px",
-          borderRadius: "4px",
-          background: "rgba(255,255,255,0.05)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: "12px",
-          fontFamily: "monospace",
-          color: "#888",
-          fontWeight: 700,
-          marginTop: "1px",
+          minWidth: "28px", height: "28px", borderRadius: "4px",
+          background: "rgba(255,255,255,0.05)", display: "flex",
+          alignItems: "center", justifyContent: "center",
+          fontSize: "12px", fontFamily: "monospace",
+          color: "#888", fontWeight: 700, marginTop: "1px",
         }}>
           {String(index + 1).padStart(2, "0")}
         </div>
 
-        {/* Content */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px", flexWrap: "wrap" }}>
-            <span style={{
-              fontSize: "15px",
-              fontWeight: 600,
-              color: "#f0f0f0",
-              fontFamily: "'Inter', sans-serif",
-            }}>
+            <span style={{ fontSize: "15px", fontWeight: 600, color: "#f0f0f0", fontFamily: "'Inter', sans-serif" }}>
               {problem.name}
             </span>
             <span style={{
-              fontSize: "13px",
-              fontWeight: 700,
-              color: color,
-              fontFamily: "monospace",
-              background: `${color}18`,
-              padding: "2px 8px",
-              borderRadius: "4px",
-              border: `1px solid ${color}40`,
+              fontSize: "13px", fontWeight: 700, color: color,
+              fontFamily: "monospace", background: `${color}18`,
+              padding: "2px 8px", borderRadius: "4px", border: `1px solid ${color}40`,
             }}>
               {problem.rating}
             </span>
           </div>
-
           <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
             {problem.tags.map((tag, i) => (
               <TagBadge key={tag} tag={tag} index={i} />
@@ -141,7 +121,6 @@ function ProblemCard({ problem, index }) {
           </div>
         </div>
 
-        {/* Arrow */}
         <div style={{ color: "#444", fontSize: "18px", alignSelf: "center" }}>→</div>
       </div>
     </a>
@@ -152,37 +131,23 @@ function WeaknessBar({ tags }) {
   return (
     <div style={{ marginBottom: "28px" }}>
       <div style={{
-        fontSize: "11px",
-        fontFamily: "monospace",
-        color: "#666",
-        letterSpacing: "1.5px",
-        textTransform: "uppercase",
-        marginBottom: "10px",
+        fontSize: "11px", fontFamily: "monospace", color: "#666",
+        letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: "10px",
       }}>
         WEAKNESS DIAGNOSIS
       </div>
       <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
         {tags.map((tag, i) => (
           <div key={tag} style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            background: "rgba(239,68,68,0.08)",
-            border: "1px solid rgba(239,68,68,0.2)",
-            borderRadius: "6px",
-            padding: "6px 14px",
+            display: "flex", alignItems: "center", gap: "8px",
+            background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)",
+            borderRadius: "6px", padding: "6px 14px",
           }}>
             <div style={{
-              width: "6px", height: "6px",
-              borderRadius: "50%",
+              width: "6px", height: "6px", borderRadius: "50%",
               background: `hsl(${0 + i * 15}, 70%, 55%)`,
             }} />
-            <span style={{
-              color: "#e57373",
-              fontFamily: "monospace",
-              fontSize: "13px",
-              fontWeight: 600,
-            }}>
+            <span style={{ color: "#e57373", fontFamily: "monospace", fontSize: "13px", fontWeight: 600 }}>
               {tag}
             </span>
           </div>
@@ -197,39 +162,19 @@ function RatingDisplay({ rating }) {
   const label = getRatingLabel(rating);
   return (
     <div style={{
-      display: "inline-flex",
-      alignItems: "center",
-      gap: "10px",
-      background: "rgba(255,255,255,0.03)",
-      border: "1px solid rgba(255,255,255,0.08)",
-      borderRadius: "8px",
-      padding: "10px 16px",
-      marginBottom: "24px",
+      display: "inline-flex", alignItems: "center", gap: "10px",
+      background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)",
+      borderRadius: "8px", padding: "10px 16px", marginBottom: "24px",
     }}>
       <div style={{
-        width: "10px", height: "10px",
-        borderRadius: "50%",
-        background: color,
-        boxShadow: `0 0 8px ${color}`,
+        width: "10px", height: "10px", borderRadius: "50%",
+        background: color, boxShadow: `0 0 8px ${color}`,
       }} />
-      <span style={{ color: "#aaa", fontSize: "13px", fontFamily: "monospace" }}>
-        targeting
-      </span>
-      <span style={{
-        color: color,
-        fontSize: "20px",
-        fontWeight: 800,
-        fontFamily: "monospace",
-        letterSpacing: "-0.5px",
-      }}>
+      <span style={{ color: "#aaa", fontSize: "13px", fontFamily: "monospace" }}>targeting</span>
+      <span style={{ color: color, fontSize: "20px", fontWeight: 800, fontFamily: "monospace", letterSpacing: "-0.5px" }}>
         {rating}
       </span>
-      <span style={{
-        color: color,
-        fontSize: "12px",
-        fontFamily: "monospace",
-        opacity: 0.8,
-      }}>
+      <span style={{ color: color, fontSize: "12px", fontFamily: "monospace", opacity: 0.8 }}>
         {label}
       </span>
     </div>
@@ -239,17 +184,75 @@ function RatingDisplay({ rating }) {
 function TerminalLine({ children, delay = 0, color = "#4ade80" }) {
   return (
     <div style={{
-      fontFamily: "monospace",
-      fontSize: "13px",
-      color: color,
-      animation: `fadeIn 0.3s ease ${delay}s both`,
-      lineHeight: "1.8",
+      fontFamily: "monospace", fontSize: "13px", color: color,
+      animation: `fadeIn 0.3s ease ${delay}s both`, lineHeight: "1.8",
     }}>
       {children}
     </div>
   );
 }
 
+// ── Error state component ──────────────────────────────────────────────────────
+function ErrorState({ message }) {
+  const isTimeout = message?.toLowerCase().includes("timeout") ||
+                    message?.toLowerCase().includes("failed to fetch");
+  return (
+    <div style={{
+      background: "rgba(239,68,68,0.05)",
+      border: "1px solid rgba(239,68,68,0.2)",
+      borderRadius: "8px",
+      padding: "20px 24px",
+      fontFamily: "monospace",
+      fontSize: "13px",
+      color: "#ef4444",
+      animation: "fadeIn 0.3s ease",
+    }}>
+      <div style={{ fontWeight: 700, marginBottom: "8px", fontSize: "11px", letterSpacing: "1.5px" }}>
+        ERROR
+      </div>
+
+      {isTimeout ? (
+        <>
+          <div style={{ color: "#f0a0a0", marginBottom: "12px", lineHeight: 1.7 }}>
+            The server is waking up — it sleeps after 15 minutes of inactivity.
+          </div>
+          <div style={{
+            background: "rgba(255,255,255,0.03)",
+            border: "1px solid rgba(255,255,255,0.07)",
+            borderRadius: "6px",
+            padding: "12px 16px",
+            color: "#888",
+            lineHeight: 1.8,
+          }}>
+            <div style={{ color: "#4ade80", marginBottom: "4px" }}>▶ what to do</div>
+            Wait 20–30 seconds, then try again. The server will be ready.
+          </div>
+        </>
+      ) : (
+        <>
+          <div style={{ color: "#f0a0a0", marginBottom: "12px", lineHeight: 1.7 }}>
+            {message}
+          </div>
+          <div style={{
+            background: "rgba(255,255,255,0.03)",
+            border: "1px solid rgba(255,255,255,0.07)",
+            borderRadius: "6px",
+            padding: "12px 16px",
+            color: "#888",
+            lineHeight: 1.8,
+          }}>
+            <div style={{ color: "#4ade80", marginBottom: "4px" }}>▶ possible causes</div>
+            <div>· The Codeforces handle doesn't exist</div>
+            <div>· Codeforces API is temporarily down</div>
+            <div>· Network issue on your end</div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ── Main App ──────────────────────────────────────────────────────────────────
 export default function App() {
   const [handle, setHandle] = useState("");
   const [loading, setLoading] = useState(false);
@@ -264,20 +267,37 @@ export default function App() {
     setError(null);
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/analyze/${handle.trim()}`);
+      const controller = new AbortController();
+      // 40s timeout — enough for Render cold start + CF API call
+      const timeoutId = setTimeout(() => controller.abort(), 40000);
+
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/analyze/${handle.trim()}`,
+        { signal: controller.signal }
+      );
+      clearTimeout(timeoutId);
+
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
+
+      if (data.Message?.includes("Error fetching")) {
+        setError("Codeforces returned an error. The handle may not exist or CF API is down.");
+        return;
+      }
+
       setResult(data);
     } catch (err) {
-      setError("Could not connect to the backend. Make sure your FastAPI server is running on port 8000.");
+      if (err.name === "AbortError") {
+        setError("timeout");
+      } else {
+        setError(err.message || "Something went wrong. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleKey = (e) => {
-    if (e.key === "Enter") analyze();
-  };
+  const handleKey = (e) => { if (e.key === "Enter") analyze(); };
 
   const isNotEnoughData = result?.diagnosis?.includes("Not enough data");
   const isNoWrong = result?.diagnosis?.includes("No Wrong Submissions");
@@ -285,32 +305,23 @@ export default function App() {
 
   return (
     <div style={{
-      minHeight: "100vh",
-      background: "#0d0d0d",
-      color: "#f0f0f0",
-      fontFamily: "'Inter', system-ui, sans-serif",
-      padding: "0",
+      minHeight: "100vh", background: "#0d0d0d",
+      color: "#f0f0f0", fontFamily: "'Inter', system-ui, sans-serif", padding: "0",
     }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
         @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
         @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes scanline {
-          0% { transform: translateY(-100%); }
-          100% { transform: translateY(100vh); }
-        }
+        @keyframes scanline { 0% { transform: translateY(-100%); } 100% { transform: translateY(100vh); } }
         * { box-sizing: border-box; }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: #111; }
         ::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
       `}</style>
 
-      {/* Scanline effect */}
-      <div style={{
-        position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
-        pointerEvents: "none", zIndex: 0, overflow: "hidden",
-      }}>
+      {/* Scanline */}
+      <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, pointerEvents: "none", zIndex: 0, overflow: "hidden" }}>
         <div style={{
           position: "absolute", left: 0, right: 0, height: "2px",
           background: "linear-gradient(transparent, rgba(74,222,128,0.03), transparent)",
@@ -318,15 +329,11 @@ export default function App() {
         }} />
       </div>
 
-      {/* Grid background */}
+      {/* Grid */}
       <div style={{
-        position: "fixed", inset: 0, zIndex: 0,
-        backgroundImage: `
-          linear-gradient(rgba(74,222,128,0.02) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(74,222,128,0.02) 1px, transparent 1px)
-        `,
+        position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none",
+        backgroundImage: `linear-gradient(rgba(74,222,128,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(74,222,128,0.02) 1px, transparent 1px)`,
         backgroundSize: "40px 40px",
-        pointerEvents: "none",
       }} />
 
       <div style={{ position: "relative", zIndex: 1, maxWidth: "760px", margin: "0 auto", padding: "48px 24px 80px" }}>
@@ -334,33 +341,18 @@ export default function App() {
         {/* Header */}
         <div style={{ marginBottom: "52px" }}>
           <div style={{
-            fontFamily: "monospace",
-            fontSize: "11px",
-            color: "#4ade80",
-            letterSpacing: "3px",
-            textTransform: "uppercase",
-            marginBottom: "12px",
-            opacity: 0.7,
+            fontFamily: "monospace", fontSize: "11px", color: "#4ade80",
+            letterSpacing: "3px", textTransform: "uppercase", marginBottom: "12px", opacity: 0.7,
           }}>
             $ ./algo_coach --init
           </div>
           <h1 style={{
-            fontSize: "clamp(36px, 6vw, 56px)",
-            fontWeight: 800,
-            margin: "0 0 10px",
-            letterSpacing: "-2px",
-            lineHeight: 1,
-            color: "#ffffff",
+            fontSize: "clamp(36px, 6vw, 56px)", fontWeight: 800,
+            margin: "0 0 10px", letterSpacing: "-2px", lineHeight: 1, color: "#ffffff",
           }}>
             Algo<span style={{ color: "#4ade80" }}>Coach</span>
           </h1>
-          <p style={{
-            fontSize: "15px",
-            color: "#666",
-            margin: 0,
-            fontFamily: "monospace",
-            lineHeight: 1.6,
-          }}>
+          <p style={{ fontSize: "15px", color: "#666", margin: 0, fontFamily: "monospace", lineHeight: 1.6 }}>
             KNN-powered weakness detection from your Codeforces history.
             <br />
             Enter your handle to get your next 5 problems.
@@ -370,20 +362,15 @@ export default function App() {
         {/* Input */}
         <div style={{ marginBottom: "40px" }}>
           <div style={{
-            display: "flex",
-            gap: "0",
+            display: "flex", gap: "0",
             border: `1px solid ${inputFocused ? "#4ade80" : "#2a2a2a"}`,
-            borderRadius: "8px",
-            overflow: "hidden",
+            borderRadius: "8px", overflow: "hidden",
             transition: "border-color 0.2s ease",
             boxShadow: inputFocused ? "0 0 0 3px rgba(74,222,128,0.08)" : "none",
           }}>
             <div style={{
-              padding: "0 16px",
-              background: "#111",
-              display: "flex",
-              alignItems: "center",
-              borderRight: "1px solid #2a2a2a",
+              padding: "0 16px", background: "#111",
+              display: "flex", alignItems: "center", borderRight: "1px solid #2a2a2a",
             }}>
               <span style={{ fontFamily: "monospace", fontSize: "14px", color: "#4ade80" }}>$</span>
             </div>
@@ -396,15 +383,9 @@ export default function App() {
               onBlur={() => setInputFocused(false)}
               placeholder="enter codeforces handle..."
               style={{
-                flex: 1,
-                background: "#111",
-                border: "none",
-                outline: "none",
-                color: "#f0f0f0",
-                fontSize: "15px",
-                fontFamily: "monospace",
-                padding: "16px 18px",
-                caretColor: "#4ade80",
+                flex: 1, background: "#111", border: "none", outline: "none",
+                color: "#f0f0f0", fontSize: "15px", fontFamily: "monospace",
+                padding: "16px 18px", caretColor: "#4ade80",
               }}
             />
             <button
@@ -414,51 +395,31 @@ export default function App() {
                 background: loading || !handle.trim() ? "#1a1a1a" : "#4ade80",
                 border: "none",
                 color: loading || !handle.trim() ? "#444" : "#0d0d0d",
-                padding: "0 28px",
-                fontSize: "13px",
-                fontFamily: "monospace",
-                fontWeight: 700,
-                cursor: loading || !handle.trim() ? "not-allowed" : "pointer",
-                letterSpacing: "0.5px",
-                transition: "all 0.15s ease",
-                whiteSpace: "nowrap",
+                padding: "0 28px", fontSize: "13px", fontFamily: "monospace",
+                fontWeight: 700, cursor: loading || !handle.trim() ? "not-allowed" : "pointer",
+                letterSpacing: "0.5px", transition: "all 0.15s ease", whiteSpace: "nowrap",
               }}
             >
               {loading ? (
                 <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                   <span style={{
-                    width: "12px", height: "12px",
-                    border: "2px solid #333",
-                    borderTop: "2px solid #4ade80",
-                    borderRadius: "50%",
-                    display: "inline-block",
-                    animation: "spin 0.8s linear infinite",
+                    width: "12px", height: "12px", border: "2px solid #333",
+                    borderTop: "2px solid #4ade80", borderRadius: "50%",
+                    display: "inline-block", animation: "spin 0.8s linear infinite",
                   }} />
                   analyzing
                 </span>
               ) : "ANALYZE →"}
             </button>
           </div>
-          <div style={{
-            fontFamily: "monospace",
-            fontSize: "11px",
-            color: "#444",
-            marginTop: "8px",
-            paddingLeft: "4px",
-          }}>
+          <div style={{ fontFamily: "monospace", fontSize: "11px", color: "#444", marginTop: "8px", paddingLeft: "4px" }}>
             press enter or click ANALYZE · requires 15+ submissions on codeforces
           </div>
         </div>
 
-        {/* Loading State */}
+        {/* Loading */}
         {loading && (
-          <div style={{
-            background: "#0f0f0f",
-            border: "1px solid #1e1e1e",
-            borderRadius: "8px",
-            padding: "24px",
-            fontFamily: "monospace",
-          }}>
+          <div style={{ background: "#0f0f0f", border: "1px solid #1e1e1e", borderRadius: "8px", padding: "24px" }}>
             <TerminalLine color="#4ade80">▶ fetching submission history...</TerminalLine>
             <TerminalLine color="#4ade80" delay={0.4}>▶ computing tag failure rates...</TerminalLine>
             <TerminalLine color="#4ade80" delay={0.8}>▶ running KNN on problem space...</TerminalLine>
@@ -469,49 +430,19 @@ export default function App() {
         )}
 
         {/* Error */}
-        {error && (
-          <div style={{
-            background: "rgba(239,68,68,0.05)",
-            border: "1px solid rgba(239,68,68,0.2)",
-            borderRadius: "8px",
-            padding: "20px 24px",
-            fontFamily: "monospace",
-            fontSize: "13px",
-            color: "#ef4444",
-          }}>
-            <div style={{ marginBottom: "6px", fontWeight: 700 }}>ERROR</div>
-            {error}
-          </div>
-        )}
+        {error && <ErrorState message={error} />}
 
         {/* Not enough data */}
         {isNotEnoughData && (
-          <div style={{
-            background: "#0f0f0f",
-            border: "1px solid #2a2a2a",
-            borderRadius: "8px",
-            padding: "28px",
-            animation: "fadeIn 0.3s ease",
-          }}>
-            <div style={{ fontFamily: "monospace", fontSize: "11px", color: "#666", letterSpacing: "1.5px", marginBottom: "16px" }}>
-              DIAGNOSIS
-            </div>
-            <div style={{ color: "#f59e0b", fontFamily: "monospace", fontSize: "14px", marginBottom: "20px" }}>
-              ⚠ {result.diagnosis}
-            </div>
-            <div style={{ marginBottom: "12px", color: "#888", fontSize: "13px" }}>
-              Start here:
-            </div>
+          <div style={{ background: "#0f0f0f", border: "1px solid #2a2a2a", borderRadius: "8px", padding: "28px", animation: "fadeIn 0.3s ease" }}>
+            <div style={{ fontFamily: "monospace", fontSize: "11px", color: "#666", letterSpacing: "1.5px", marginBottom: "16px" }}>DIAGNOSIS</div>
+            <div style={{ color: "#f59e0b", fontFamily: "monospace", fontSize: "14px", marginBottom: "20px" }}>⚠ {result.diagnosis}</div>
+            <div style={{ marginBottom: "12px", color: "#888", fontSize: "13px" }}>Start here:</div>
             <a href={result.action_plan.link} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}>
               <div style={{
-                background: "rgba(255,255,255,0.03)",
-                border: "1px solid rgba(255,255,255,0.08)",
-                borderLeft: "3px solid #808080",
-                borderRadius: "6px",
-                padding: "14px 18px",
-                color: "#f0f0f0",
-                fontWeight: 600,
-                fontSize: "15px",
+                background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)",
+                borderLeft: "3px solid #808080", borderRadius: "6px",
+                padding: "14px 18px", color: "#f0f0f0", fontWeight: 600, fontSize: "15px",
               }}>
                 {result.action_plan.recommended_problem} →
               </div>
@@ -522,94 +453,50 @@ export default function App() {
         {/* No wrong submissions */}
         {isNoWrong && (
           <div style={{
-            background: "#0f0f0f",
-            border: "1px solid rgba(74,222,128,0.2)",
-            borderRadius: "8px",
-            padding: "28px",
-            animation: "fadeIn 0.3s ease",
-            textAlign: "center",
+            background: "#0f0f0f", border: "1px solid rgba(74,222,128,0.2)",
+            borderRadius: "8px", padding: "28px", animation: "fadeIn 0.3s ease", textAlign: "center",
           }}>
             <div style={{ fontSize: "32px", marginBottom: "12px" }}>🏆</div>
-            <div style={{ color: "#4ade80", fontFamily: "monospace", fontSize: "15px", fontWeight: 700 }}>
-              {result.diagnosis}
-            </div>
-            <div style={{ color: "#666", fontFamily: "monospace", fontSize: "13px", marginTop: "8px" }}>
-              {result.action_plan}
-            </div>
+            <div style={{ color: "#4ade80", fontFamily: "monospace", fontSize: "15px", fontWeight: 700 }}>{result.diagnosis}</div>
+            <div style={{ color: "#666", fontFamily: "monospace", fontSize: "13px", marginTop: "8px" }}>{result.action_plan}</div>
           </div>
         )}
 
-        {/* Success State */}
+        {/* Success */}
         {isSuccess && (
           <div style={{ animation: "fadeIn 0.3s ease" }}>
-
-            {/* Handle header */}
-            <div style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginBottom: "24px",
-              flexWrap: "wrap",
-              gap: "12px",
-            }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "24px", flexWrap: "wrap", gap: "12px" }}>
               <div>
-                <div style={{ fontFamily: "monospace", fontSize: "11px", color: "#666", letterSpacing: "1.5px", marginBottom: "4px" }}>
-                  ANALYSIS COMPLETE
-                </div>
-                <div style={{ fontSize: "22px", fontWeight: 700, color: "#f0f0f0" }}>
-                  {result.handle}
-                </div>
+                <div style={{ fontFamily: "monospace", fontSize: "11px", color: "#666", letterSpacing: "1.5px", marginBottom: "4px" }}>ANALYSIS COMPLETE</div>
+                <div style={{ fontSize: "22px", fontWeight: 700, color: "#f0f0f0" }}>{result.handle}</div>
               </div>
               <div style={{
-                fontFamily: "monospace",
-                fontSize: "11px",
-                color: "#4ade80",
-                background: "rgba(74,222,128,0.06)",
-                border: "1px solid rgba(74,222,128,0.15)",
-                padding: "6px 12px",
-                borderRadius: "4px",
+                fontFamily: "monospace", fontSize: "11px", color: "#4ade80",
+                background: "rgba(74,222,128,0.06)", border: "1px solid rgba(74,222,128,0.15)",
+                padding: "6px 12px", borderRadius: "4px",
               }}>
                 ✓ 5 problems found
               </div>
             </div>
 
-            {/* Rating target */}
             <RatingDisplay rating={result["Target Rating"]} />
-
-            {/* Weaknesses */}
             <WeaknessBar tags={result["Weakest Tag"].split(",")} />
 
-            {/* Divider */}
-            <div style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "12px",
-              marginBottom: "16px",
-            }}>
-              <div style={{ fontFamily: "monospace", fontSize: "11px", color: "#666", letterSpacing: "1.5px", whiteSpace: "nowrap" }}>
-                RECOMMENDED PROBLEMS
-              </div>
+            <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "16px" }}>
+              <div style={{ fontFamily: "monospace", fontSize: "11px", color: "#666", letterSpacing: "1.5px", whiteSpace: "nowrap" }}>RECOMMENDED PROBLEMS</div>
               <div style={{ flex: 1, height: "1px", background: "#1e1e1e" }} />
             </div>
 
-            {/* Problems */}
             {result["Recommended Problem"].map((problem, i) => (
               <ProblemCard key={problem.name} problem={problem} index={i} />
             ))}
 
-            {/* Footer note */}
             <div style={{
-              marginTop: "24px",
-              padding: "14px 18px",
-              background: "rgba(74,222,128,0.03)",
-              border: "1px solid rgba(74,222,128,0.08)",
-              borderRadius: "6px",
-              fontFamily: "monospace",
-              fontSize: "12px",
-              color: "#555",
-              lineHeight: 1.7,
+              marginTop: "24px", padding: "14px 18px",
+              background: "rgba(74,222,128,0.03)", border: "1px solid rgba(74,222,128,0.08)",
+              borderRadius: "6px", fontFamily: "monospace", fontSize: "12px", color: "#555", lineHeight: 1.7,
             }}>
-              Problems selected by KNN using your fail-rate weighted tag scores and target rating ±100.
+              Problems selected by KNN using your fail-rate weighted tag scores and target rating ±300.
               Solve in any order. Re-analyze after 10+ new submissions for updated recommendations.
             </div>
           </div>
@@ -617,21 +504,11 @@ export default function App() {
 
         {/* Footer */}
         <div style={{
-          marginTop: "80px",
-          paddingTop: "24px",
-          borderTop: "1px solid #1a1a1a",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: "8px",
+          marginTop: "80px", paddingTop: "24px", borderTop: "1px solid #1a1a1a",
+          display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px",
         }}>
-          <span style={{ fontFamily: "monospace", fontSize: "11px", color: "#333" }}>
-            algo_coach v1.0 · KNN + Codeforces API
-          </span>
-          <span style={{ fontFamily: "monospace", fontSize: "11px", color: "#333" }}>
-            data from codeforces.com
-          </span>
+          <span style={{ fontFamily: "monospace", fontSize: "11px", color: "#333" }}>algo_coach v1.0 · KNN + Codeforces API</span>
+          <span style={{ fontFamily: "monospace", fontSize: "11px", color: "#333" }}>data from codeforces.com</span>
         </div>
       </div>
     </div>
