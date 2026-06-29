@@ -145,8 +145,16 @@ def analyze(handle: str):
     url = f"https://codeforces.com/api/user.status?handle={handle}&from=1&count=100"
     response = requests.get(url)
 
-    if response.status_code ==200:
+    if response.status_code == 200:
         data = response.json()
+        
+        # CF returns status "FAILED" for invalid handles even on 200
+        if data.get("status") == "FAILED":
+            return {
+                "error": "invalid_handle",
+                "message": f"'{handle}' is not a valid Codeforces handle. Check for typos."
+            }
+        
         submissions = data.get("result", [])
         
         # If there isn't enough data just reccomending a default problem
@@ -195,4 +203,7 @@ def analyze(handle: str):
         }
 
     else:
-        return {"Message":"Error fetching data from Codeforces", "status":response.status_code}
+        return {
+            "error": "invalid_handle", 
+            "message": f"'{handle}' is not a valid Codeforces handle. Check for typos."
+        }

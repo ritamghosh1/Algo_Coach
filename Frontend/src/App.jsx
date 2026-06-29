@@ -193,61 +193,57 @@ function TerminalLine({ children, delay = 0, color = "#4ade80" }) {
 }
 
 // ── Error state component ──────────────────────────────────────────────────────
-function ErrorState({ message }) {
-  const isTimeout = message?.toLowerCase().includes("timeout") ||
-                    message?.toLowerCase().includes("failed to fetch");
+function ErrorState({ error }) {
+  if (error.type === "timeout") {
+    return (
+      <div style={{
+        background: "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.2)",
+        borderRadius: "8px", padding: "20px 24px", fontFamily: "monospace",
+        fontSize: "13px", color: "#ef4444", animation: "fadeIn 0.3s ease",
+      }}>
+        <div style={{ fontWeight: 700, marginBottom: "8px", fontSize: "11px", letterSpacing: "1.5px" }}>SERVER WAKING UP</div>
+        <div style={{ color: "#f0a0a0", marginBottom: "12px", lineHeight: 1.7 }}>
+          The server sleeps after 15 minutes of inactivity. Wait 20–30 seconds and try again.
+        </div>
+      </div>
+    );
+  }
+
+  if (error.type === "invalid_handle") {
+    return (
+      <div style={{
+        background: "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.2)",
+        borderRadius: "8px", padding: "20px 24px", fontFamily: "monospace",
+        animation: "fadeIn 0.3s ease",
+      }}>
+        <div style={{ fontWeight: 700, marginBottom: "8px", fontSize: "11px", letterSpacing: "1.5px", color: "#ef4444" }}>
+          INVALID HANDLE
+        </div>
+        <div style={{ color: "#f0a0a0", marginBottom: "16px", fontSize: "14px", lineHeight: 1.7 }}>
+          {error.message}
+        </div>
+        {/* Visual hint */}
+        <div style={{
+          background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)",
+          borderRadius: "6px", padding: "12px 16px", color: "#666", lineHeight: 1.8, fontSize: "12px",
+        }}>
+          <div style={{ color: "#4ade80", marginBottom: "4px" }}>▶ how to find your handle</div>
+          <div>Go to <span style={{ color: "#aaa" }}>codeforces.com</span> → your profile → the name shown in the top right.</div>
+          <div>Handles are case-sensitive. <span style={{ color: "#aaa" }}>tourist</span> ≠ <span style={{ color: "#aaa" }}>Tourist</span></div>
+        </div>
+      </div>
+    );
+  }
+
+  // Generic fallback
   return (
     <div style={{
-      background: "rgba(239,68,68,0.05)",
-      border: "1px solid rgba(239,68,68,0.2)",
-      borderRadius: "8px",
-      padding: "20px 24px",
-      fontFamily: "monospace",
-      fontSize: "13px",
-      color: "#ef4444",
-      animation: "fadeIn 0.3s ease",
+      background: "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.2)",
+      borderRadius: "8px", padding: "20px 24px", fontFamily: "monospace",
+      fontSize: "13px", color: "#ef4444", animation: "fadeIn 0.3s ease",
     }}>
-      <div style={{ fontWeight: 700, marginBottom: "8px", fontSize: "11px", letterSpacing: "1.5px" }}>
-        ERROR
-      </div>
-
-      {isTimeout ? (
-        <>
-          <div style={{ color: "#f0a0a0", marginBottom: "12px", lineHeight: 1.7 }}>
-            The server is waking up — it sleeps after 15 minutes of inactivity.
-          </div>
-          <div style={{
-            background: "rgba(255,255,255,0.03)",
-            border: "1px solid rgba(255,255,255,0.07)",
-            borderRadius: "6px",
-            padding: "12px 16px",
-            color: "#888",
-            lineHeight: 1.8,
-          }}>
-            <div style={{ color: "#4ade80", marginBottom: "4px" }}>▶ what to do</div>
-            Wait 20–30 seconds, then try again. The server will be ready.
-          </div>
-        </>
-      ) : (
-        <>
-          <div style={{ color: "#f0a0a0", marginBottom: "12px", lineHeight: 1.7 }}>
-            {message}
-          </div>
-          <div style={{
-            background: "rgba(255,255,255,0.03)",
-            border: "1px solid rgba(255,255,255,0.07)",
-            borderRadius: "6px",
-            padding: "12px 16px",
-            color: "#888",
-            lineHeight: 1.8,
-          }}>
-            <div style={{ color: "#4ade80", marginBottom: "4px" }}>▶ possible causes</div>
-            <div>· The Codeforces handle doesn't exist</div>
-            <div>· Codeforces API is temporarily down</div>
-            <div>· Network issue on your end</div>
-          </div>
-        </>
-      )}
+      <div style={{ fontWeight: 700, marginBottom: "8px", fontSize: "11px", letterSpacing: "1.5px" }}>ERROR</div>
+      <div style={{ color: "#f0a0a0", lineHeight: 1.7 }}>{error.message || "Something went wrong. Please try again."}</div>
     </div>
   );
 }
@@ -268,7 +264,6 @@ export default function App() {
 
     try {
       const controller = new AbortController();
-      // 40s timeout — enough for Render cold start + CF API call
       const timeoutId = setTimeout(() => controller.abort(), 40000);
 
       const res = await fetch(
@@ -277,20 +272,22 @@ export default function App() {
       );
       clearTimeout(timeoutId);
 
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
 
-      if (data.Message?.includes("Error fetching")) {
-        setError("Codeforces returned an error. The handle may not exist or CF API is down.");
+      // Specific invalid handle check
+      if (data.error === "invalid_handle") {
+        setError({ type: "invalid_handle", message: data.message });
         return;
       }
 
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setResult(data);
+
     } catch (err) {
       if (err.name === "AbortError") {
-        setError("timeout");
+        setError({ type: "timeout" });
       } else {
-        setError(err.message || "Something went wrong. Please try again.");
+        setError({ type: "generic", message: err.message });
       }
     } finally {
       setLoading(false);
@@ -430,7 +427,7 @@ export default function App() {
         )}
 
         {/* Error */}
-        {error && <ErrorState message={error} />}
+        {error && <ErrorState error={error} />}
 
         {/* Not enough data */}
         {isNotEnoughData && (
