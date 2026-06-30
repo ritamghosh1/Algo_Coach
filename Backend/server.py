@@ -1,33 +1,78 @@
 from fastapi import FastAPI # type: ignore
-import requests
+import httpx  # type: ignore
 from sklearn.neighbors import NearestNeighbors
 import numpy as np
+import json
+import time
+import os
+import asyncio
+
+CACHE_FILE = "problems_cache.json"
+CACHE_TTL = 86400
 
 app = FastAPI()
 
-# Added CORS Middleware
-from fastapi.middleware.cors import CORSMiddleware  # type: ignore
+from fastapi.middleware.cors import CORSMiddleware # type: ignore
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:5173",                    # local dev
-        "https://algo-coach-navy.vercel.app",            # production 
+        "http://localhost:5173",
+        "https://algo-coach-navy.vercel.app",
     ],
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Helper function to get the weakest tag
+# In-memory lock so concurrent requests don't all refresh the cache at once
+_cache_lock = asyncio.Lock()
+
+
+#  Problem caching (fixed + async) 
+async def get_problems():
+    if os.path.exists(CACHE_FILE):
+        with open(CACHE_FILE, "r") as f:
+            cache = json.load(f)
+        age = time.time() - cache["timestamp"]
+        if age < CACHE_TTL:
+            return cache["problems"]
+
+    # Lock so only one concurrent request actually refreshes the cache
+    async with _cache_lock:
+        # Re-check after acquiring lock — another request may have just refreshed it
+        if os.path.exists(CACHE_FILE):
+            with open(CACHE_FILE, "r") as f:
+                cache = json.load(f)
+            age = time.time() - cache["timestamp"]
+            if age < CACHE_TTL:
+                return cache["problems"]
+
+        async with httpx.AsyncClient() as client:
+            response = await client.get("https://codeforces.com/api/problemset.problems")
+        data = response.json()
+        problems = data["result"]["problems"]
+
+        with open(CACHE_FILE, "w") as f:
+            json.dump({"timestamp": time.time(), "problems": problems}, f)
+
+        return problems
+
+
+#  Weakness breakdown 
 def get_weakest_tag(clean_data):
-    solved_problems = set() # Set of Solved Problems
+    """
+    Returns (weakest_tags, solved_problems, full_breakdown)
+    full_breakdown = sorted list of {tag, fail_count} for ALL failed tags,
+    not just top 3 — used for the weakness breakdown feature.
+    """
+    solved_problems = set()
     failed_problems = []
     for submission in clean_data:
         if submission["verdict"] == "OK":
             solved_problems.add(submission["name"])
         else:
             failed_problems.append(submission)
-    
+
     fail_tag_count = {}
     for submission in failed_problems:
         if submission["name"] not in solved_problems:
@@ -35,46 +80,45 @@ def get_weakest_tag(clean_data):
                 fail_tag_count[tag] = fail_tag_count.get(tag, 0) + 1
 
     if not fail_tag_count:
-        return [], solved_problems
-    
+        return [], solved_problems, []
+
     sorted_tags = sorted(fail_tag_count.items(), key=lambda x: x[1], reverse=True)
     weakest_tag = [tag for tag, count in sorted_tags[:3]]
-    return weakest_tag, solved_problems
 
-    
-    
+    # Full breakdown with percentage of total failures
+    total_fails = sum(fail_tag_count.values())
+    full_breakdown = [
+        {
+            "tag": tag,
+            "fail_count": count,
+            "percentage": round((count / total_fails) * 100, 1)
+        }
+        for tag, count in sorted_tags[:8]
+    ]
 
-# Helper function to get the target rating from the Users Rating
-def get_target_rating(handle:str):
-    url = f"https://codeforces.com/api/user.info?handles={handle}"
-    response = requests.get(url)
+    return weakest_tag, solved_problems, full_breakdown
 
-    if response.status_code==200:
+
+#  Target rating 
+async def get_target_rating(handle: str):
+    async with httpx.AsyncClient() as client:
+        response = await client.get(f"https://codeforces.com/api/user.info?handles={handle}")
+
+    if response.status_code == 200:
         data = response.json()
         user_data = data["result"][0]
         rating = user_data["rating"]
-        if rating is None or rating<700:
+        if rating is None or rating < 700:
             return 800
         return rating + 100
     else:
         return 800
-    
-# Helper Function to get the Reccomended Problems
-def get_reccomendation(weakest_tag, target_rating, solved_problems):
-    url = "https://codeforces.com/api/problemset.problems"
-    response = requests.get(url)
 
-    if response.status_code != 200:
-        return {"error": "Failed to fetch problems"}
 
-    data = response.json()
-    problems = data["result"]["problems"]
-
-    # --- Config: tweak these to tune behavior ---
-    RATING_WEIGHT = 0.25   # rating matters, but less
-    TAG_WEIGHT    = 0.75   # tag match dominates, as intended
-    RATING_WINDOW = 300    # only consider problems within ±300 of target
-    # --------------------------------------------
+#  Core KNN matcher — now takes an explicit target_rating + returns explainability 
+def knn_match(problems, weakest_tag, target_rating, solved_problems, k=5, rating_window=300):
+    RATING_WEIGHT = 0.25
+    TAG_WEIGHT = 0.75
 
     valid_problems = []
     raw_ratings = []
@@ -86,27 +130,23 @@ def get_reccomendation(weakest_tag, target_rating, solved_problems):
 
         if name in solved_problems or rating == "Unrated":
             continue
-
-        # Pre-filter: only keep problems within rating window
-        if abs(rating - target_rating) > RATING_WINDOW:
+        if abs(rating - target_rating) > rating_window:
             continue
 
-        # Tag score: fraction of weak tags this problem covers (always 0.0–1.0)
         if weakest_tag:
-            tag_match = sum(1 for tag in prob["tags"] if tag in weakest_tag)
-            tag_score = tag_match / len(weakest_tag)
+            matched_tags = [tag for tag in prob["tags"] if tag in weakest_tag]
+            tag_score = len(matched_tags) / len(weakest_tag)
         else:
+            matched_tags = []
             tag_score = 0.0
 
-        valid_problems.append(prob)
+        valid_problems.append((prob, matched_tags))
         raw_ratings.append(rating)
         raw_tag_scores.append(tag_score)
 
     if not valid_problems:
         return []
 
-    # Normalize rating within the filtered window (not the full CF range)
-    # This makes the distance space consistent for every user level
     min_r = min(raw_ratings)
     max_r = max(raw_ratings)
     rating_range = (max_r - min_r) if max_r != min_r else 1
@@ -114,96 +154,158 @@ def get_reccomendation(weakest_tag, target_rating, solved_problems):
     feature_vectors = []
     for r, t in zip(raw_ratings, raw_tag_scores):
         norm_rating = ((r - min_r) / rating_range) * RATING_WEIGHT
-        norm_tags   = t * TAG_WEIGHT
+        norm_tags = t * TAG_WEIGHT
         feature_vectors.append([norm_rating, norm_tags])
 
     norm_target_rating = ((target_rating - min_r) / rating_range) * RATING_WEIGHT
-    norm_target_tags   = 1.0 * TAG_WEIGHT 
+    norm_target_tags = 1.0 * TAG_WEIGHT
 
-    k_value = min(len(valid_problems), 5)
+    k_value = min(len(valid_problems), k)
     knn = NearestNeighbors(n_neighbors=k_value, metric="euclidean")
     knn.fit(feature_vectors)
 
     distances, indices = knn.kneighbors([[norm_target_rating, norm_target_tags]])
 
     recommendations = []
-    for idx in indices[0]:
-        problem = valid_problems[idx]
+    for dist, idx in zip(distances[0], indices[0]):
+        problem, matched_tags = valid_problems[idx]
         recommendations.append({
             "name": problem["name"],
             "rating": problem.get("rating", "Unrated"),
             "tags": problem["tags"],
-            "link": f"https://codeforces.com/contest/{problem['contestId']}/problem/{problem['index']}"
+            "link": f"https://codeforces.com/contest/{problem['contestId']}/problem/{problem['index']}",
+            #  Explainability (NEW) 
+            "match_reason": {
+                "matched_tags": matched_tags,
+                "tag_match_ratio": f"{len(matched_tags)}/{len(weakest_tag)}" if weakest_tag else "0/0",
+                "rating_diff": problem.get("rating", 0) - target_rating,
+                "distance_score": round(float(dist), 4)
+            }
         })
     return recommendations
-    
 
 
-# The API Gateway
+#  Staircase recommendation 
+def get_staircase_recommendation(weakest_tag, target_rating, solved_problems, problems):
+    """
+    Returns problems at 3 difficulty tiers instead of all at target_rating:
+      - confidence: 2 problems below target (builds momentum)
+      - target:     1-2 problems at target (the core challenge)
+      - stretch:    1-2 problems above target (growth edge)
+    """
+    confidence_rating = max(800, target_rating - 200)
+    stretch_rating = target_rating + 200
+
+    confidence_problems = knn_match(
+        problems, weakest_tag, confidence_rating, solved_problems, k=2, rating_window=150
+    )
+    target_problems = knn_match(
+        problems, weakest_tag, target_rating, solved_problems, k=2, rating_window=150
+    )
+    stretch_problems = knn_match(
+        problems, weakest_tag, stretch_rating, solved_problems, k=1, rating_window=200
+    )
+
+    # Dedupe across tiers in case of overlap
+    seen_names = set()
+    def dedupe(probs):
+        result = []
+        for p in probs:
+            if p["name"] not in seen_names:
+                seen_names.add(p["name"])
+                result.append(p)
+        return result
+
+    return {
+        "confidence": dedupe(confidence_problems),
+        "target": dedupe(target_problems),
+        "stretch": dedupe(stretch_problems),
+    }
+
+
+#  API Gateway  
 @app.get("/analyze/{handle}")
-def analyze(handle: str):
-    url = f"https://codeforces.com/api/user.status?handle={handle}&from=1&count=100"
-    response = requests.get(url)
+async def analyze(handle: str, mode: str = "standard"):
+    """
+    mode=standard   → original flat top-5 recommendation (default, backward compatible)
+    mode=staircase  → confidence/target/stretch tiered recommendation
+    """
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            f"https://codeforces.com/api/user.status?handle={handle}&from=1&count=100"
+        )
 
-    if response.status_code == 200:
-        data = response.json()
-        
-        # CF returns status "FAILED" for invalid handles even on 200
-        if data.get("status") == "FAILED":
-            return {
-                "error": "invalid_handle",
-                "message": f"'{handle}' is not a valid Codeforces handle. Check for typos."
-            }
-        
-        submissions = data.get("result", [])
-        
-        # If there isn't enough data just reccomending a default problem
-        if len(submissions)<15:
-            return {
-                "handle":handle,
-                "diagnosis": "Not enough data! The Algo-Coach needs at least 15 submissions.",
-                "action_plan": {
-                    "message": "Start with the fundamentals.",
-                    "recommended_problem": "Watermelon", 
-                    "link": "https://codeforces.com/problemset/problem/4/A"
-                }
-            }
-        
-        # Clean the Data
-        clean_data = []
-        for submission in submissions:
-            problem = submission["problem"]
-            rating = problem.get("rating", "Unrated")
-            clean_data.append({
-                "name" : problem["name"],
-                "rating" : rating,
-                "tags" : problem["tags"],
-                "verdict": submission["verdict"]
-            })
-        
-        # Extracting the Weakest Tag and Solved Problems
-        weakest_tag, solved_problems = get_weakest_tag(clean_data)
-
-        # If no Wrong Submissions
-        if not weakest_tag:
-            return{
-                "handle" : handle,
-                "diagnosis": "No Wrong Submissions! in the last 100 submissions",
-                "action_plan":"Continue doing what you are doing."
-            }
-        
-        target_rating = get_target_rating(handle)
-        recommended_problem = get_reccomendation(weakest_tag, target_rating, solved_problems)
-        
-        return{
-            "handle" : handle,
-            "Target Rating": target_rating,
-            "Weakest Tag": ",".join(weakest_tag),
-            "Recommended Problem": recommended_problem
-        }
-
-    else:
+    if response.status_code != 200:
         return {
-            "error": "invalid_handle", 
+            "error": "invalid_handle",
             "message": f"'{handle}' is not a valid Codeforces handle. Check for typos."
         }
+
+    data = response.json()
+
+    if data.get("status") == "FAILED":
+        return {
+            "error": "invalid_handle",
+            "message": f"'{handle}' is not a valid Codeforces handle. Check for typos."
+        }
+
+    submissions = data.get("result", [])
+
+    if len(submissions) < 15:
+        return {
+            "handle": handle,
+            "diagnosis": "Not enough data! The Algo-Coach needs at least 15 submissions.",
+            "action_plan": {
+                "message": "Start with the fundamentals.",
+                "recommended_problem": "Watermelon",
+                "link": "https://codeforces.com/problemset/problem/4/A"
+            }
+        }
+
+    clean_data = []
+    for submission in submissions:
+        problem = submission["problem"]
+        rating = problem.get("rating", "Unrated")
+        clean_data.append({
+            "name": problem["name"],
+            "rating": rating,
+            "tags": problem["tags"],
+            "verdict": submission["verdict"]
+        })
+
+    weakest_tag, solved_problems, weakness_breakdown = get_weakest_tag(clean_data)
+
+    if not weakest_tag:
+        return {
+            "handle": handle,
+            "diagnosis": "No Wrong Submissions! in the last 100 submissions",
+            "action_plan": "Continue doing what you are doing."
+        }
+
+    # Run target rating fetch and problem cache fetch concurrently — this is
+    # the real concurrency win, not just "async syntax for its own sake"
+    target_rating, problems = await asyncio.gather(
+        get_target_rating(handle),
+        get_problems()
+    )
+
+    if mode == "staircase":
+        staircase = get_staircase_recommendation(weakest_tag, target_rating, solved_problems, problems)
+        return {
+            "handle": handle,
+            "Target Rating": target_rating,
+            "Weakest Tag": ",".join(weakest_tag),
+            "Weakness Breakdown": weakness_breakdown,
+            "Staircase": staircase
+        }
+
+    # Standard mode (backward compatible with current frontend)
+    recommended_problem = knn_match(problems, weakest_tag, target_rating, solved_problems, k=5)
+
+    return {
+        "handle": handle,
+        "Target Rating": target_rating,
+        "Weakest Tag": ",".join(weakest_tag),
+        "Weakness Breakdown": weakness_breakdown,
+        "Recommended Problem": recommended_problem
+    }
